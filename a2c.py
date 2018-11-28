@@ -2,12 +2,11 @@ import os
 import gym
 import pylab
 import numpy as np
-from keras.layers import Dense
 from keras.models import Sequential
+from keras.layers import Dense
 from keras.optimizers import Adam
 
 
-# A2C(Advantage Actor-Critic) agent
 class A2CAgent:
     
     def __init__(self, state_size, action_size, load_models = False, actor_model_file = "", critic_model_file = ""):
@@ -25,10 +24,10 @@ class A2CAgent:
         self.actor = self.build_actor()
         self.critic = self.build_critic()
 
-        if (load_models):
-            if (actor_model_file):
+        if load_models:
+            if actor_model_file:
                 self.actor.load_weights(actor_model_file)
-            if (critic_model_file):
+            if critic_model_file:
                 self.critic.load_weights(critic_model_file)
 
     # The actor takes a state and outputs probabilities of each possible action
@@ -77,22 +76,23 @@ class A2CAgent:
         # Randomly choose an action
         return np.random.choice(self.action_size, 1, p=policy).take(0)
 
-    def train_model(self, state, action, reward, next_state, done):
+    def train_model(self, previous_state, action, reward, current_state, done):
 
-        predicted_value_current_state = self.critic.predict(state)[0]
-        predicted_value_next_state = self.critic.predict(next_state)[0] if not done else 0.
+        # Make predictions of the value using the critic
+        predicted_value_previous_state = self.critic.predict(previous_state)[0]
+        predicted_value_current_state = self.critic.predict(current_state)[0] if not done else 0.
         
-        real_current_value = reward + self.discount_factor * predicted_value_next_state
+        # Estimate the "real" value as the reward + the (discounted) predicted value of the current state 
+        real_previous_value = reward + self.discount_factor * predicted_value_current_state
         
         advantages = np.zeros((1, self.action_size))
-        # The difference between what we predicted and what we got - put it in the
-        #  "slot" of the current action
-        advantages[0][action] = real_current_value - predicted_value_current_state
+        # The advantage is the difference between what we got and what we predicted
+        # - put it in the "slot" of the current action
+        advantages[0][action] = real_previous_value - predicted_value_previous_state
         
-        real_value = np.full((1,1), real_current_value)
-
-        self.actor.fit(state, advantages, epochs=1, verbose=0)
-        self.critic.fit(state, real_value, epochs=1, verbose=0)
+        # Train the actor and the critic
+        self.actor.fit(previous_state, advantages, epochs=1, verbose=0)
+        self.critic.fit(previous_state, reshape(real_previous_value), epochs=1, verbose=0)
 
 
 # Reshape array for input into keras
