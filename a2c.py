@@ -9,11 +9,12 @@ from keras.optimizers import Adam
 
 class A2CAgent:
     
-    def __init__(self, state_size, action_size, load_models = False, actor_model_file = "", critic_model_file = ""):
-              
+    def __init__(self, state_size, action_size, load_models = False, actor_model_file = '', critic_model_file = ''):
+            
         self.state_size = state_size
         self.action_size = action_size
         self.value_size = 1
+        self.layer_size = 16
 
         # Hyper parameters for learning
         self.discount_factor = 0.99
@@ -33,9 +34,9 @@ class A2CAgent:
     # The actor takes a state and outputs probabilities of each possible action
     def build_actor(self):
         
-        layer1 = Dense(16, input_dim=self.state_size, activation='relu',
+        layer1 = Dense(self.layer_size, input_dim=self.state_size, activation='relu',
                         kernel_initializer='he_uniform')
-        layer2 = Dense(16, input_dim=self.state_size, activation='relu',
+        layer2 = Dense(self.layer_size, input_dim=self.layer_size, activation='relu',
                         kernel_initializer='he_uniform')
         # Use softmax activation so that the sum of probabilities of the actions becomes 1
         layer3 = Dense(self.action_size, activation='softmax',
@@ -54,9 +55,9 @@ class A2CAgent:
     # The critic takes a state and outputs the predicted value of the state
     def build_critic(self):
         
-        layer1 = Dense(16, input_dim=self.state_size, activation='relu',
+        layer1 = Dense(self.layer_size, input_dim=self.state_size, activation='relu',
                          kernel_initializer='he_uniform')
-        layer2 = Dense(16, input_dim=self.state_size, activation='relu',
+        layer2 = Dense(self.layer_size, input_dim=self.layer_size, activation='relu',
                          kernel_initializer='he_uniform')
         layer3 = Dense(self.value_size, activation='linear',
                          kernel_initializer='he_uniform')
@@ -66,7 +67,7 @@ class A2CAgent:
         # Print a summary of the network
         critic.summary()
         
-        critic.compile(loss="mean_squared_error", optimizer=Adam(lr=self.critic_learning_rate))
+        critic.compile(loss='mean_squared_error', optimizer=Adam(lr=self.critic_learning_rate))
         return critic
 
     # Randomly pick an action, with probabilities from the actor network
@@ -82,12 +83,12 @@ class A2CAgent:
         predicted_value_previous_state = self.critic.predict(previous_state)[0]
         predicted_value_current_state = self.critic.predict(current_state)[0] if not done else 0.
         
-        # Estimate the "real" value as the reward + the (discounted) predicted value of the current state 
+        # Estimate the 'real' value as the reward + the (discounted) predicted value of the current state 
         real_previous_value = reward + self.discount_factor * predicted_value_current_state
         
         advantages = np.zeros((1, self.action_size))
         # The advantage is the difference between what we got and what we predicted
-        # - put it in the "slot" of the current action
+        # - put it in the 'slot' of the current action
         advantages[0][action] = real_previous_value - predicted_value_previous_state
         
         # Train the actor and the critic
@@ -100,11 +101,11 @@ def reshape(state):
     return np.reshape(state, (1, -1))
 
 
-SAVE_DIRECTORY = "./a2c_output/"
-ACTOR_MODEL_FILE = SAVE_DIRECTORY + "actor.h5"
-CRITIC_MODEL_FILE = SAVE_DIRECTORY + "critic.h5"
+SAVE_DIRECTORY = './a2c_output/'
+ACTOR_MODEL_FILE = SAVE_DIRECTORY + 'actor.h5'
+CRITIC_MODEL_FILE = SAVE_DIRECTORY + 'critic.h5'
 LOAD_MODELS = False
-GYM_GAME = "CartPole-v1"
+GYM_GAME = 'CartPole-v1'
 
 
 def runSavedModel():
@@ -179,7 +180,7 @@ def trainModel():
                 pylab.plot(episodes, scores, 'b')
                 pylab.pause(0.1)
                                 
-                print("episode:", episode, " score:", score)
+                print('episode:', episode, ' score:', score)
 
                 # If we have SUCCESS_COUNT perfect runs in a row, stop training
                 if len(scores) >= SUCCESS_COUNT and np.mean(scores[-SUCCESS_COUNT:]) == max_score:
@@ -195,6 +196,6 @@ def trainModel():
     env.close()
 
 
-#if __name__ == "__main__":
+#if __name__ == '__main__':
 #    trainModel()
     
